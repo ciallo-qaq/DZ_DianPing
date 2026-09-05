@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/dingping?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    password: 123456
+    database: 0
+
+    lettuce:
+      pool:
+        max-active: 30
+        max-idle: 15
+        min-idle: 5
+        time-between-eviction-runs: 10s
+
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
