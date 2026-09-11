@@ -4,11 +4,13 @@ package com.hmdp.controller;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.Voucher;
 import com.hmdp.service.IVoucherService;
+import com.hmdp.trace.ApiTrace;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 
 
+@ApiTrace
 @RestController
 @RequestMapping("/voucher")
 public class VoucherController {

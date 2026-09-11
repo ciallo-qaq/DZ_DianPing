@@ -9,6 +9,7 @@ import com.hmdp.entity.User;
 import com.hmdp.entity.UserInfo;
 import com.hmdp.service.IUserInfoService;
 import com.hmdp.service.IUserService;
+import com.hmdp.trace.ApiTrace;
 import com.hmdp.utils.UserHolder;
 import io.reactivex.Single;
 import lombok.Getter;
@@ -22,6 +23,7 @@ import javax.servlet.http.HttpSession;
 
 
 @Slf4j
+@ApiTrace
 @RestController
 @RequestMapping("/user")
 public class UserController {
@@ -98,7 +100,6 @@ public class UserController {
         return userService.signCount();
     }
 }
-
 
 
 

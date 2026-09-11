@@ -8,6 +8,7 @@ import com.hmdp.entity.Blog;
 import com.hmdp.entity.User;
 import com.hmdp.service.IBlogService;
 import com.hmdp.service.IUserService;
+import com.hmdp.trace.ApiTrace;
 import com.hmdp.utils.SystemConstants;
 import com.hmdp.utils.UserHolder;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ import javax.annotation.Resource;
 import java.util.List;
 
 
+@ApiTrace
 @RestController
 @RequestMapping("/blog")
 public class BlogController {

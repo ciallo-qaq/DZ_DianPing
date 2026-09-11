@@ -23,3 +23,7 @@ spring:
     port: 5672
     username: guest
     password: guest
+
+# 仅开发环境打开接口性能采集，日志直接输出到控制台
+dev-trace:
+  enabled: true

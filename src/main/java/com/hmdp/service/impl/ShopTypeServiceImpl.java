@@ -41,6 +41,7 @@ public class ShopTypeServiceImpl extends ServiceImpl<ShopTypeMapper, ShopType> i
             String json = JSONUtil.toJsonStr(shopType);
             stringRedisTemplate.opsForList().rightPush(RedisConstants.SHOP_TYPE_KEY,json);
         }
+        System.out.println("查询shopTypes成功");
         return Result.ok(shopTypes);
         //1.先从redis缓存看是否存在
         // String shopTypeJson = stringRedisTemplate.opsForValue().get(RedisConstants.SHOP_TYPE_KEY);

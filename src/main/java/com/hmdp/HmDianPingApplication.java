@@ -7,7 +7,9 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.EnableAspectJAutoProxy;
 
-@EnableAspectJAutoProxy(exposeProxy = true)
+// proxyTargetClass = true：Controller 没有接口，且项目里存在按实现类注入的场景
+// （如 FollowServiceImpl 注入 UserServiceImpl），统一使用 CGLIB 代理可同时满足两者
+@EnableAspectJAutoProxy(exposeProxy = true, proxyTargetClass = true)
 @MapperScan("com.hmdp.mapper")
 @EnableRabbit
 @SpringBootApplication

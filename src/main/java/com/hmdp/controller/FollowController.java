@@ -3,11 +3,13 @@ package com.hmdp.controller;
 
 import com.hmdp.dto.Result;
 import com.hmdp.service.IFollowService;
+import com.hmdp.trace.ApiTrace;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 
 
+@ApiTrace
 @RestController
 @RequestMapping("/follow")
 public class FollowController {

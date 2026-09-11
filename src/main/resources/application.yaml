@@ -17,3 +17,14 @@ mybatis-plus:
 logging:
   level:
     com.hmdp: debug
+
+# 开发期接口/Service 性能采集（实现见 com.hmdp.trace 包）
+# 这里放默认值：默认关闭，因此生产环境无需额外配置就是"不采集"状态
+dev-trace:
+  enabled: false
+  slow-ms: 200            # 慢接口阈值(毫秒)，超过用 WARN 级别输出
+  service-slow-ms: 50     # Service 明细输出阈值(毫秒)
+  max-arg-length: 200     # 单个参数值最大长度，超出截断
+  max-params: 20          # 单次请求最多采集的参数个数
+  max-service-lines: 10   # 单次请求最多输出的 Service 明细行数
+  mask-keys: password,token,code,phone,authorization,idCard

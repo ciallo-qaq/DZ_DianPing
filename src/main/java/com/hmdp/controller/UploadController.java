@@ -3,6 +3,7 @@ package com.hmdp.controller;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
 import com.hmdp.dto.Result;
+import com.hmdp.trace.ApiTrace;
 import com.hmdp.utils.SystemConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +14,8 @@ import java.io.IOException;
 import java.util.UUID;
 
 @Slf4j
+// 上传/删除接口只关心耗时，不需要记录文件参数，因此关闭参数采集
+@ApiTrace(args = false)
 @RestController
 @RequestMapping("upload")
 public class UploadController {
