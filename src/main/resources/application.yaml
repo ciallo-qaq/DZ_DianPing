@@ -28,3 +28,9 @@ dev-trace:
   max-params: 20          # 单次请求最多采集的参数个数
   max-service-lines: 10   # 单次请求最多输出的 Service 明细行数
   mask-keys: password,token,code,phone,authorization,idCard
+
+# 接口限流（令牌桶，实现见 com.hmdp.ratelimit 包）
+# 默认开启且不配置白名单：生产环境不做任何额外配置就是"全部限流"的安全状态
+rate-limit:
+  enabled: true
+  key-prefix: ratelimit

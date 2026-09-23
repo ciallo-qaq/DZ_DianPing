@@ -27,3 +27,12 @@ spring:
 # 仅开发环境打开接口性能采集，日志直接输出到控制台
 dev-trace:
   enabled: true
+
+# 仅开发环境把本机加入限流白名单：
+# 1) 本地联调不会被限流打扰；2) VoucherOrderControllerTest 需要从同一 IP 批量获取验证码与登录
+# 生产 profile(application-prod.yml) 不配置白名单，保持默认的"全部限流"
+rate-limit:
+  whitelist-ips:
+    - 127.0.0.1
+    - 0:0:0:0:0:0:0:1
+    - ::1

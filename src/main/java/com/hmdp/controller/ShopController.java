@@ -5,6 +5,9 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.Shop;
+import com.hmdp.ratelimit.RateLimit;
+import com.hmdp.ratelimit.RateLimitDimension;
+import com.hmdp.ratelimit.RateLimitRule;
 import com.hmdp.service.IShopService;
 import com.hmdp.trace.ApiTrace;
 import com.hmdp.utils.SystemConstants;
@@ -23,6 +26,8 @@ public class ShopController {
 
 
     @GetMapping("/{id}")
+    @RateLimit(@RateLimitRule(key = "shop:detail", dimension = RateLimitDimension.IP,
+            capacity = 30, refillTokens = 20, refillPeriodMillis = 1_000L))
     public Result queryShopById(@PathVariable("id") Long id) throws InterruptedException {
         return shopService.queryById(id);
     }
@@ -44,6 +49,8 @@ public class ShopController {
     }
 
     @GetMapping("/of/type")
+    @RateLimit(@RateLimitRule(key = "shop:type", dimension = RateLimitDimension.IP,
+            capacity = 30, refillTokens = 20, refillPeriodMillis = 1_000L))
     public Result queryShopByType(
             @RequestParam("typeId") Integer typeId,
             @RequestParam(value = "current", defaultValue = "1") Integer current,
@@ -55,6 +62,8 @@ public class ShopController {
 
 
     @GetMapping("/of/name")
+    @RateLimit(@RateLimitRule(key = "shop:name", dimension = RateLimitDimension.IP,
+            capacity = 20, refillTokens = 10, refillPeriodMillis = 1_000L))
     public Result queryShopByName(
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "current", defaultValue = "1") Integer current

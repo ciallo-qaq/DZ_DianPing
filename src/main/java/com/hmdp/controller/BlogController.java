@@ -6,6 +6,9 @@ import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.Blog;
 import com.hmdp.entity.User;
+import com.hmdp.ratelimit.RateLimit;
+import com.hmdp.ratelimit.RateLimitDimension;
+import com.hmdp.ratelimit.RateLimitRule;
 import com.hmdp.service.IBlogService;
 import com.hmdp.service.IUserService;
 import com.hmdp.trace.ApiTrace;
@@ -51,17 +54,23 @@ public class BlogController {
 
 
     @GetMapping("/hot")
+    @RateLimit(@RateLimitRule(key = "blog:hot", dimension = RateLimitDimension.IP,
+            capacity = 30, refillTokens = 20, refillPeriodMillis = 1_000L))
     public Result queryHotBlog(@RequestParam(value = "current", defaultValue = "1") Integer current) {
        return blogService.queryHotBlog(current);
     }
 
 
     @GetMapping("/{id}")
+    @RateLimit(@RateLimitRule(key = "blog:detail", dimension = RateLimitDimension.IP,
+            capacity = 30, refillTokens = 20, refillPeriodMillis = 1_000L))
     public Result queryById(@PathVariable("id") Long id){
         return blogService.queryBlogById(id);
     }
 
     @GetMapping("/likes/{id}")
+    @RateLimit(@RateLimitRule(key = "blog:likes", dimension = RateLimitDimension.IP,
+            capacity = 30, refillTokens = 20, refillPeriodMillis = 1_000L))
     public Result queryBlogLikes(@PathVariable("id") Long id){
         return blogService.queryBlogLikes(id);
     }
