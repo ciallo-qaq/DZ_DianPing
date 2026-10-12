@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: hmdp
+    name: dzdp
 
   profiles:
     active: dev
@@ -12,13 +12,13 @@ spring:
     default-property-inclusion: non_null
 
 mybatis-plus:
-  type-aliases-package: com.hmdp.entity
+  type-aliases-package: com.dzdp.entity
 
 logging:
   level:
-    com.hmdp: debug
+    com.dzdp: debug
 
-# 开发期接口/Service 性能采集（实现见 com.hmdp.trace 包）
+# 开发期接口/Service 性能采集（实现见 com.dzdp.trace 包）
 # 这里放默认值：默认关闭，因此生产环境无需额外配置就是"不采集"状态
 dev-trace:
   enabled: false
@@ -29,7 +29,7 @@ dev-trace:
   max-service-lines: 10   # 单次请求最多输出的 Service 明细行数
   mask-keys: password,token,code,phone,authorization,idCard
 
-# 接口限流（令牌桶，实现见 com.hmdp.ratelimit 包）
+# 接口限流（令牌桶，实现见 com.dzdp.ratelimit 包）
 # 默认开启且不配置白名单：生产环境不做任何额外配置就是"全部限流"的安全状态
 rate-limit:
   enabled: true
