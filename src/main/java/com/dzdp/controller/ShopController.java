@@ -68,10 +68,14 @@ public class ShopController {
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "current", defaultValue = "1") Integer current
     ) {
-        // 根据类型分页查询
+        // 根据店名分页查询
+        // 注意 likeRight 生成的是 "name LIKE '关键字%'"，才能命中 idx_name 索引；
+        // 原来的 like 生成 "name LIKE '%关键字%'"，前置通配符会让索引彻底失效。
+        // 代价是变成前缀匹配，如果业务需要中间匹配，请改用全文索引(ngram)或 ES。
         Page<Shop> page = shopService.query()
-                .like(StrUtil.isNotBlank(name), "name", name)
-                .page(new Page<>(current, SystemConstants.MAX_PAGE_SIZE));
+                .likeRight(StrUtil.isNotBlank(name), "name", name)
+                .orderByDesc("id")
+                .page(new Page<>(SystemConstants.safeCurrentPage(current), SystemConstants.MAX_PAGE_SIZE));
 
         return Result.ok(page.getRecords());
     }

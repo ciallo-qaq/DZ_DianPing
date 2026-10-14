@@ -32,7 +32,9 @@ CREATE TABLE `tb_blog`  (
   `comments` int(8) UNSIGNED NULL DEFAULT NULL COMMENT '评论数量',
   `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`id`) USING BTREE
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_user_create`(`user_id`, `create_time`) USING BTREE,
+  INDEX `idx_liked`(`liked`, `id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 23 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Compact;
 
 -- ----------------------------
@@ -74,7 +76,9 @@ CREATE TABLE `tb_follow`  (
   `user_id` bigint(20) UNSIGNED NOT NULL COMMENT '用户id',
   `follow_user_id` bigint(20) UNSIGNED NOT NULL COMMENT '关联的用户id',
   `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  PRIMARY KEY (`id`) USING BTREE
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_user_follow`(`user_id`, `follow_user_id`) USING BTREE,
+  INDEX `idx_follow_user`(`follow_user_id`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Compact;
 
 -- ----------------------------
@@ -120,7 +124,8 @@ CREATE TABLE `tb_shop`  (
   `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`) USING BTREE,
-  INDEX `foreign_key_type`(`type_id`) USING BTREE
+  INDEX `foreign_key_type`(`type_id`) USING BTREE,
+  INDEX `idx_name`(`name`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 15 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Compact;
 
 -- ----------------------------
@@ -1251,7 +1256,8 @@ CREATE TABLE `tb_voucher`  (
   `status` tinyint(1) UNSIGNED NOT NULL DEFAULT 1 COMMENT '1,上架; 2,下架; 3,过期',
   `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`id`) USING BTREE
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_shop_status`(`shop_id`, `status`) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Compact;
 
 -- ----------------------------
@@ -1274,7 +1280,8 @@ CREATE TABLE `tb_voucher_order`  (
   `use_time` timestamp NULL DEFAULT NULL COMMENT '核销时间',
   `refund_time` timestamp NULL DEFAULT NULL COMMENT '退款时间',
   `update_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`id`) USING BTREE
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_user_voucher`(`user_id`, `voucher_id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Compact;
 
 -- ----------------------------
@@ -1282,3 +1289,45 @@ CREATE TABLE `tb_voucher_order`  (
 -- ----------------------------
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+
+/* ============================================================================
+   索引升级脚本（只用于"已经存在的库"）
+
+   上面每张表的 CREATE TABLE 里已经包含这些索引，全新导入本文件即可，无需执行本节。
+   如果是在已有的 hmdp 库上升级，把下面注释里的 ALTER 语句放开手动执行一次。
+   （默认注释掉，是为了避免整份导入时因为索引已存在而报错）
+
+   执行前必须先做重复数据自检，两条都返回 0 行才可以建唯一索引：
+
+     SELECT user_id, follow_user_id, COUNT(*) c FROM tb_follow
+       GROUP BY user_id, follow_user_id HAVING c > 1;
+     SELECT user_id, voucher_id, COUNT(*) c FROM tb_voucher_order
+       GROUP BY user_id, voucher_id HAVING c > 1;
+
+   索引用途：
+     uk_user_follow   关注关系：判断是否关注、取关（DELETE 不再全表扫描并锁全表），DB 层防重复关注
+     idx_follow_user  查"我的粉丝"（推模式发笔记时用），follow_user_id 不满足上面唯一索引的最左前缀
+     uk_user_voucher  一人一单的 DB 兜底 + MQ 重复消费幂等 + 替代全表 count
+     idx_shop_status  券列表 WHERE shop_id=? AND status=1（原来 tb_voucher 全表扫）
+     idx_user_create  我的笔记/某人的笔记 WHERE user_id=? ORDER BY create_time DESC
+     idx_liked        热榜 ORDER BY liked DESC, id DESC（走索引反向扫描，去掉 filesort）
+     idx_name         店铺名搜索，必须配合 likeRight 生成 'name LIKE 关键字%' 才能命中
+
+   ALTER TABLE tb_follow
+       ADD UNIQUE INDEX `uk_user_follow`(`user_id`, `follow_user_id`) USING BTREE,
+       ADD INDEX `idx_follow_user`(`follow_user_id`) USING BTREE;
+
+   ALTER TABLE tb_voucher_order
+       ADD UNIQUE INDEX `uk_user_voucher`(`user_id`, `voucher_id`) USING BTREE;
+
+   ALTER TABLE tb_voucher
+       ADD INDEX `idx_shop_status`(`shop_id`, `status`) USING BTREE;
+
+   ALTER TABLE tb_blog
+       ADD INDEX `idx_user_create`(`user_id`, `create_time`) USING BTREE,
+       ADD INDEX `idx_liked`(`liked`, `id`) USING BTREE;
+
+   ALTER TABLE tb_shop
+       ADD INDEX `idx_name`(`name`) USING BTREE;
+============================================================================ */

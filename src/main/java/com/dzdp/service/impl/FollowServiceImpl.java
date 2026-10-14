@@ -9,6 +9,8 @@ import com.dzdp.mapper.FollowMapper;
 import com.dzdp.service.IFollowService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.dzdp.utils.UserHolder;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> implements IFollowService {
 
     @Resource
@@ -37,11 +40,15 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
             Follow follow = new Follow();
             follow.setFollowUserId(followUserId);
             follow.setUserId(userId);
-            boolean isSuccess = save(follow);
-            if(isSuccess){
-                //把关注用户的id，放入redis的set集合 sadd userId followUserId
-                stringRedisTemplate.opsForSet().add(key,followUserId.toString());
+            try {
+                save(follow);
+            } catch (DuplicateKeyException e) {
+                // 唯一索引 uk_user_follow 拦截了重复关注：属于幂等场景，不报错，
+                // 继续把 Redis 集合补齐，保证两边状态一致
+                log.warn("重复关注，已忽略 user_id={} follow_user_id={}", userId, followUserId);
             }
+            //把关注用户的id，放入redis的set集合 sadd userId followUserId
+            stringRedisTemplate.opsForSet().add(key,followUserId.toString());
         }else {
             //3.取关
             boolean isSuccess = remove(new QueryWrapper<Follow>()

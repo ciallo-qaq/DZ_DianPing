@@ -44,8 +44,13 @@ public class BlogController {
 
         UserDTO user = UserHolder.getUser();
 
+        // 列表页不需要正文（content 单列 2048），显式指定列减少传输与 IO；
+        // 补上 ORDER BY 让分页顺序稳定，并命中 idx_user_create(user_id, create_time)
         Page<Blog> page = blogService.query()
-                .eq("user_id", user.getId()).page(new Page<>(current, SystemConstants.MAX_PAGE_SIZE));
+                .select("id", "shop_id", "user_id", "title", "images", "liked", "comments", "create_time")
+                .eq("user_id", user.getId())
+                .orderByDesc("create_time", "id")
+                .page(new Page<>(SystemConstants.safeCurrentPage(current), SystemConstants.MAX_PAGE_SIZE));
         // 获取当前页数据
         List<Blog> records = page.getRecords();
         return Result.ok(records);
@@ -80,7 +85,10 @@ public class BlogController {
             @RequestParam("id") Long id){
         //根据用户查询
         Page<Blog> page = blogService.query()
-                .eq("user_id", id).page(new Page<>(currrent, SystemConstants.MAX_PAGE_SIZE));
+                .select("id", "shop_id", "user_id", "title", "images", "liked", "comments", "create_time")
+                .eq("user_id", id)
+                .orderByDesc("create_time", "id")
+                .page(new Page<>(SystemConstants.safeCurrentPage(currrent), SystemConstants.MAX_PAGE_SIZE));
 
         //获取当前页数据
         List<Blog> records = page.getRecords();

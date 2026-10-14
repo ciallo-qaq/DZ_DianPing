@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -29,7 +30,10 @@ public class SeckillVoucherListener {
         log.info("正常队列:");
         VoucherOrder voucherOrder = JSONUtil.toBean(msg, VoucherOrder.class);
         log.info(voucherOrder.toString());
-        voucherOrderService.save(voucherOrder);//保存到数据库
+        if (!saveOrder(voucherOrder)) {
+            // 重复投递：订单已经落过库，直接结束，避免消息被反复重投
+            return;
+        }
         //数据库秒杀库存减一
         Long voucherId=voucherOrder.getVoucherId();
         seckillVoucherService.update()
@@ -46,7 +50,9 @@ public class SeckillVoucherListener {
         String msg=new String(message.getBody());
         VoucherOrder voucherOrder = JSONUtil.toBean(msg, VoucherOrder.class);
         log.info(voucherOrder.toString());
-        voucherOrderService.save(voucherOrder);
+        if (!saveOrder(voucherOrder)) {
+            return;
+        }
 
         Long voucherId=voucherOrder.getVoucherId();
         seckillVoucherService.update()
@@ -54,5 +60,23 @@ public class SeckillVoucherListener {
                 .eq("voucher_id", voucherId).gt("stock", 0) // where id = ? and stock > 0
                 .update();
 
+    }
+
+    /**
+     * 订单落库，重复消息返回 false，保证消费幂等。
+     *
+     * <p>依赖 tb_voucher_order 上的两个唯一约束：主键 id（同一条消息重投）和
+     * uk_user_voucher(user_id, voucher_id)（一人一单，兜底 Redis 丢数据的情况）。
+     * 若唯一约束缺失，重复消息会插入出重复订单，这里没有兜底。</p>
+     */
+    private boolean saveOrder(VoucherOrder voucherOrder) {
+        try {
+            voucherOrderService.save(voucherOrder);
+            return true;
+        } catch (DuplicateKeyException e) {
+            log.warn("订单已存在，忽略重复消息 orderId={} userId={} voucherId={}",
+                    voucherOrder.getId(), voucherOrder.getUserId(), voucherOrder.getVoucherId());
+            return false;
+        }
     }
 }

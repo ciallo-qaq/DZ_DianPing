@@ -10,6 +10,7 @@ import com.dzdp.service.IShopService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.dzdp.utils.CacheClient;
 import com.dzdp.utils.RedisData;
+import com.dzdp.utils.SortUtils;
 import com.dzdp.utils.SystemConstants;
 import org.springframework.data.geo.*;
 import org.springframework.data.redis.connection.RedisGeoCommands;
@@ -283,10 +284,12 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
     public Result queryShopByType(Integer typeId, Integer current, Double x, Double y) {
         //1. 是否根据坐标查询
         if (x == null || y == null) {
-            // 不需要坐标查询，直接数据库分页
+            // 不需要坐标查询，直接数据库分页：走 foreign_key_type(type_id) 索引，
+            // 并补上 ORDER BY 让分页顺序稳定（原实现没有排序，翻页时可能重复或漏数据）
             Page<Shop> page = query()
                     .eq("type_id", typeId)
-                    .page(new Page<>(current, SystemConstants.DEFAULT_PAGE_SIZE));
+                    .orderByAsc("id")
+                    .page(new Page<>(SystemConstants.safeCurrentPage(current), SystemConstants.DEFAULT_PAGE_SIZE));
             return Result.ok(page.getRecords());
         }
         //2. 计算分页参数
@@ -344,24 +347,14 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
                             dis
                     );
                 });
-        //5. 根据id查询数据库
-        String idStr = StrUtil.join(",", ids);
-        List<Shop> shops = query()
-                .in("id", ids)
-                .last(
-                        "order by field(id," + idStr + ")"
-                )
-                .list();
+        //5. 根据id查询数据库：in 查询走主键索引，顺序在内存里按 GEO 返回的距离顺序重排，
+        //   替代原来的 order by field(id,...)（函数排序用不上索引，而且靠字符串拼接 SQL）
+        List<Shop> shops = SortUtils.sortByIds(query().in("id", ids).list(), ids, Shop::getId);
         //6. 设置距离
         for (Shop shop : shops) {
-            Distance dis =
-                    distanceMap.get(
-                            shop.getId().toString()
-                    );
+            Distance dis = distanceMap.get(shop.getId().toString());
             if(dis != null){
-                shop.setDistance(
-                        dis.getValue()
-                );
+                shop.setDistance(dis.getValue());
             }
         }
         //7. 返回
